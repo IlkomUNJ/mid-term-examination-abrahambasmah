@@ -352,4 +352,88 @@ impl BstNode {
             Some(x) => Some(x.upgrade().unwrap()),
         }
     }
+
+    fn add_node(&self, target_node: &BstNodeLink, value: i32) -> bool {
+        let _ = BstNode::tree_insert(&Some(target_node.clone()), &value);
+        true
+    }
+
+
+    fn tree_predecessor(node: &BstNodeLink) -> Option<BstNodeLink> {
+  
+        if let Some(ref left_node) = node.borrow().left {
+            return Some(left_node.borrow().maximum());
+        }
+
+   
+        let mut current = node.clone();
+        let mut parent = BstNode::upgrade_weak_to_strong(current.borrow().parent.clone());
+
+        while let Some(ref p) = parent {
+            if let Some(ref right_child) = p.borrow().right {
+                if BstNode::is_node_match(right_child, &current) {
+                    return Some(p.clone());
+                }
+            }
+
+            current = p.clone();
+            parent = BstNode::upgrade_weak_to_strong(current.borrow().parent.clone());
+        }
+
+        None 
+    }
+
+
+    fn median(&self) -> BstNodeLink {
+        fn inorder_collect(node: &Option<BstNodeLink>, result: &mut Vec<BstNodeLink>) {
+            if let Some(ref n) = node {
+                inorder_collect(&n.borrow().left, result);
+                result.push(n.clone());
+                inorder_collect(&n.borrow().right, result);
+            }
+        }
+
+        let mut nodes = vec![];
+        inorder_collect(&Some(self.get_bst_nodelink_copy()), &mut nodes);
+
+        let mid = nodes.len() / 2;
+        nodes[mid].clone()
+    }
+
+
+    fn tree_rebalance(node: &BstNodeLink) -> BstNodeLink {
+        fn inorder_collect(node: &Option<BstNodeLink>, result: &mut Vec<i32>) {
+            if let Some(ref n) = node {
+                inorder_collect(&n.borrow().left, result);
+                if let Some(k) = n.borrow().key {
+                    result.push(k);
+                }
+                inorder_collect(&n.borrow().right, result);
+            }
+        }
+
+        fn build_balanced_bst(values: &[i32], start: usize, end: usize) -> Option<BstNodeLink> {
+            if start > end {
+                return None;
+            }
+            let mid = (start + end) / 2;
+            let node = BstNode::new_bst_nodelink(values[mid]);
+            node.borrow_mut().left = build_balanced_bst(values, start, mid.saturating_sub(1));
+            node.borrow_mut().right = build_balanced_bst(values, mid + 1, end);
+
+            if let Some(ref l) = node.borrow().left {
+                l.borrow_mut().parent = Some(BstNode::downgrade(&node));
+            }
+            if let Some(ref r) = node.borrow().right {
+                r.borrow_mut().parent = Some(BstNode::downgrade(&node));
+            }
+
+            Some(node)
+        }
+
+        let mut sorted_values = vec![];
+        inorder_collect(&Some(node.clone()), &mut sorted_values);
+        build_balanced_bst(&sorted_values, 0, sorted_values.len() - 1).unwrap()
+    }
+
 }
