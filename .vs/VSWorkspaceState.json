@@ -1,0 +1,11 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\.github",
+    "\\src",
+    "\\src\\structure",
+    "\\src\\tool"
+  ],
+  "SelectedNode": "\\src\\structure\\bst.rs",
+  "PreviewInSolutionExplorer": false
+}
